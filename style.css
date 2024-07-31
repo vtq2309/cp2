@@ -26,7 +26,25 @@ input {
 }
 
 #suggestions {
-    margin-bottom: 20px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    max-height: 150px; /* Limit the height to enable vertical scrolling */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    margin-top: -10px; /* Adjust margin to align better with the input field */
+    padding: 0;
+    position: absolute;
+    width: 80%;
+    z-index: 1000;
+}
+
+#suggestions div {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#suggestions div:hover {
+    background-color: #f0f0f0;
 }
 
 #result {
