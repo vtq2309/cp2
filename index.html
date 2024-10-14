@@ -1,34 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suburb Lookup</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="stylesheet" href="style.css">
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 300px;
+        }
+        .ui-menu-item {
+            padding: 10px;
+            background-color: #f0f0f0;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .ui-menu-item.ui-state-focus {
+            background-color: #d0e8ff;
+        }
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo-title">
-            <img src="logo.png" alt="Suburb Lookup Logo" class="logo">
-            <h1>Suburb Lookup</h1>
-        </div>
-        <input type="text" id="suburb-input" placeholder="Enter Suburb">
-        <div id="suggestions"></div>
-        <div id="result">
-            <p>Zone: <span id="zone"></span></p>
-            <p>Run: <span id="run"></span></p>
+    <h1>Test Page for Barcode Automation</h1>
+
+    <!-- Form chứa các trường và checkbox -->
+    <form id="senderReceiverInputForm">
+        <div class="input-group">
+            <label for="order-lookup">Order Lookup (Scan Barcode Here):</label>
+            <input type="text" id="order-lookup" placeholder="Enter barcode..." autocomplete="off">
+            <div id="suggestions" class="suggestions"></div>
         </div>
 
-    <script src="script.js"></script>
-     <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <p>Created by Thien Quang VU - AM Shift.</p>
+        <div class="input-group">
+            <label for="length">Length:</label>
+            <input type="text" id="length" title="Length" placeholder="Enter length...">
         </div>
-    </footer>
+        <div class="input-group">
+            <label for="width">Width:</label>
+            <input type="text" id="width" title="Width" placeholder="Enter width...">
+        </div>
+        <div class="input-group">
+            <label for="height">Height:</label>
+            <input type="text" id="height" title="Height" placeholder="Enter height...">
+        </div>
+        <div class="input-group">
+            <label for="weight">Weight:</label>
+            <input type="text" id="weight" title="Weight" placeholder="Enter weight...">
+        </div>
+        <div class="input-group">
+            <label for="suburb">Suburb/Town:</label>
+            <input type="text" id="suburb" title="Suburb/Town" placeholder="Enter suburb/town...">
+        </div>
+
+        <!-- Checkbox để chọn "I declare no DGs" -->
+        <div class="input-group">
+            <input type="checkbox" id="noDGs">
+            <label for="noDGs">I declare no DGs</label>
+        </div>
+
+        <div class="input-group">
+            <button id="btnSave" disabled>Save</button>
+        </div>
+    </form>
+
+    <div id="message"></div> <!-- Phần hiển thị thông báo -->
+
+    <script>
+        // Tạo nút Select trong DOM khi nhấn Save
+        function createSelectButton() {
+            // Tạo nút Select trong DOM
+            const selectButton = document.createElement('button');
+            selectButton.id = 'saveService';
+            selectButton.textContent = 'Select';
+            selectButton.addEventListener('click', function () {
+                console.log("Select button clicked!");
+
+                // Sau khi nhấn Select, xóa dữ liệu trong tất cả các ô nhập liệu, bao gồm order lookup
+                document.getElementById('length').value = '';
+                document.getElementById('width').value = '';
+                document.getElementById('height').value = '';
+                document.getElementById('weight').value = '';
+                document.getElementById('suburb').value = '';
+                document.getElementById('order-lookup').value = '';  // Xóa luôn order lookup
+                console.log("Dữ liệu trong các ô nhập liệu đã được xóa.");
+
+                // Bỏ chọn checkbox
+                let declareCheckbox = document.getElementById('noDGs');
+                if (declareCheckbox.checked) {
+                    declareCheckbox.checked = false;  // Bỏ chọn checkbox
+                    console.log("Checkbox 'I declare no DGs' đã được bỏ chọn.");
+                }
+
+                document.getElementById('message').textContent = "Đã ấn Select"; // Hiển thị thông báo Thành công
+                document.getElementById('message').style.color = "green"; // Thay đổi màu chữ thông báo
+
+                selectButton.remove(); // Sau khi nhấn Select, xóa nút này khỏi DOM
+            });
+            return selectButton;
+        }
+
+        // Tìm các phần tử chính
+        const inputField = document.getElementById("order-lookup");
+        const suggestionsDiv = document.getElementById("suggestions");
+        const saveButton = document.getElementById('btnSave');
+        const noDGsCheckbox = document.getElementById("noDGs");
+        const messageDiv = document.getElementById('message'); // Phần hiển thị thông báo
+
+        // Reset lại các trường dữ liệu khác và checkbox
+        function resetFields() {
+            document.getElementById('length').value = '';
+            document.getElementById('width').value = '';
+            document.getElementById('height').value = '';
+            document.getElementById('weight').value = '';
+            document.getElementById('suburb').value = '';
+            noDGsCheckbox.checked = false;
+            saveButton.setAttribute('disabled', 'disabled');
+            messageDiv.textContent = ''; // Xóa thông báo
+            console.log("Đã reset các trường dữ liệu và checkbox.");
+        }
+
+        // Sự kiện nhập vào ô Order Lookup
+        inputField.addEventListener('input', function () {
+            const value = inputField.value.trim();
+            suggestionsDiv.innerHTML = ''; // Xóa danh sách cũ
+            resetFields(); // Reset các trường khi có dữ liệu mới được nhập
+            if (value.length > 0) {
+                setTimeout(() => {
+                    // Hiển thị danh sách 5 gợi ý sau 1 giây
+                    suggestionsDiv.innerHTML = generateSuggestions(value);
+
+                    // Không tự động chọn, để extension xử lý
+                    console.log("Danh sách gợi ý đã hiện ra. Đợi extension chọn.");
+                }, 1000); // 1 giây delay trước khi gợi ý xuất hiện
+            }
+        });
+
+        // Hàm tạo gợi ý và thêm class ui-state-focus vào gợi ý đầu tiên
+        function generateSuggestions(inputValue) {
+            return `
+                <div class="ui-menu-item ui-state-focus">First suggestion for ${inputValue}</div>
+                <div class="ui-menu-item">Second suggestion for ${inputValue}</div>
+                <div class="ui-menu-item">Third suggestion for ${inputValue}</div>
+                <div class="ui-menu-item">Fourth suggestion for ${inputValue}</div>
+                <div class="ui-menu-item">Fifth suggestion for ${inputValue}</div>
+            `;
+        }
+
+        // Sự kiện click vào gợi ý
+        suggestionsDiv.addEventListener('click', function (e) {
+            if (e.target.classList.contains('ui-menu-item')) {
+                inputField.value = e.target.textContent;
+                suggestionsDiv.innerHTML = ''; // Ẩn gợi ý sau khi chọn
+
+                // Tự động điền dữ liệu vào các trường sau 2 giây
+                setTimeout(() => {
+                    document.getElementById('length').value = Math.floor(Math.random() * 100 + 1);
+                    document.getElementById('width').value = Math.floor(Math.random() * 100 + 1);
+                    document.getElementById('height').value = Math.floor(Math.random() * 100 + 1);
+                    document.getElementById('weight').value = Math.floor(Math.random() * 100 + 1);
+                    document.getElementById('suburb').value = `Suburb ${Math.floor(Math.random() * 100 + 1)}`;
+                    console.log("Tự động điền dữ liệu vào các trường.");
+                    checkFields(); // Kích hoạt nút Save nếu các trường đã được điền
+                },  1500); // 2 giây delay trước khi điền dữ liệu vào các trường
+            }
+        });
+
+        // Hàm kiểm tra các trường và kích hoạt nút Save
+        function checkFields() {
+            const requiredInputs = ['length', 'width', 'height', 'weight', 'suburb'];
+            let allFilled = requiredInputs.every(id => document.getElementById(id).value.trim() !== '');
+            const isNoDGsChecked = noDGsCheckbox.checked;
+
+            if (allFilled && isNoDGsChecked) {
+                saveButton.removeAttribute('disabled');
+            } else {
+                saveButton.setAttribute('disabled', 'disabled');
+            }
+        }
+
+        // Ngăn form bị submit khi nhấn Save
+        document.getElementById('senderReceiverInputForm').addEventListener('submit', function (e) {
+            e.preventDefault(); // Ngăn không cho form submit và reload trang
+        });
+
+        // Sự kiện nhấn nút Save
+        saveButton.addEventListener('click', function (e) {
+            e.preventDefault(); // Ngăn không cho nút Save gửi form
+            console.log("Save button clicked!");
+
+            // Hiển thị thông báo "Đã ấn Save"
+            messageDiv.textContent = "Đã ấn Save"; // Hiển thị thông báo dưới nút Save
+            messageDiv.style.color = "blue"; // Thay đổi màu chữ thông báo
+
+            // Tạo nút Select sau 1 giây
+            setTimeout(() => {
+                const selectButton = createSelectButton();
+                document.getElementById('senderReceiverInputForm').appendChild(selectButton);
+                console.log("Nút Select đã được thêm vào DOM.");
+            }, 1000); // Thêm 1 giây delay trước khi hiển thị nút Select
+        });
+
+        // Kiểm tra checkbox và các trường mỗi khi giá trị thay đổi
+        noDGsCheckbox.addEventListener('change', checkFields);
+
+        document.querySelectorAll('input[title]').forEach(input => {
+            input.addEventListener('input', checkFields);
+        });
+    </script>
 </body>
 </html>
