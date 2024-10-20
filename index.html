@@ -8,6 +8,11 @@
             font-family: Arial, sans-serif;
             padding: 20px;
         }
+        /* Định vị form để chứa checkbox autoprint */
+        #senderReceiverInputForm {
+            position: relative; /* Để định vị checkbox autoprint tương đối với form */
+            padding-bottom: 60px; /* Thêm padding để chỗ cho checkbox autoprint */
+        }
         .input-group {
             margin-bottom: 20px;
         }
@@ -15,6 +20,24 @@
             padding: 10px;
             margin: 5px;
             width: 300px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .cursorHand {
+            cursor: pointer;
+        }
+        .odd {
+            background-color: #f9f9f9;
+        }
+        .row-selected {
+            background-color: #d0e8ff;
         }
         .ui-menu-item {
             padding: 10px;
@@ -29,6 +52,29 @@
             margin-top: 10px;
             font-weight: bold;
             color: green;
+        }
+        .selectButton {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        /* Styles cho checkbox autoprint mới */
+        .autoprint-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: #f9f9f9;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .autoprint-container label {
+            margin-left: 5px;
+            font-weight: normal;
         }
     </style>
 </head>
@@ -61,7 +107,7 @@
         </div>
         <div class="input-group">
             <label for="suburb">Suburb/Town:</label>
-            <input type="text" id="suburb" title="Suburb/Town" placeholder="Enter suburb/town...">
+            <input type="text" id="receiverLocation" title="Suburb/Town" placeholder="Enter suburb/town...">
         </div>
 
         <!-- Checkbox để chọn "I declare no DGs" -->
@@ -73,16 +119,27 @@
         <div class="input-group">
             <button id="btnSave" disabled>Save</button>
         </div>
+
+        <!-- Checkbox Autoprint mới nằm trong form -->
+        <div class="autoprint-container">
+            <input type="checkbox" id="autoprint" name="autoprint">
+            <label for="autoprint">Auto Print</label>
+        </div>
     </form>
 
     <div id="message"></div> <!-- Phần hiển thị thông báo -->
 
+    <div id="tableContainer"></div> <!-- Nơi bảng sẽ được tạo -->
+
+    <div id="buttonContainer"></div> <!-- Nơi nút Select sẽ được tạo -->
+
+
     <script>
-        // Tạo nút Select trong DOM khi nhấn Save
+        // Tạo nút Select nằm dưới bảng với id="saveService"
         function createSelectButton() {
-            // Tạo nút Select trong DOM
             const selectButton = document.createElement('button');
-            selectButton.id = 'saveService';
+            selectButton.id = 'saveService'; // Đảm bảo nút có id là 'saveService'
+            selectButton.className = 'selectButton';
             selectButton.textContent = 'Select';
             selectButton.addEventListener('click', function () {
                 console.log("Select button clicked!");
@@ -92,7 +149,7 @@
                 document.getElementById('width').value = '';
                 document.getElementById('height').value = '';
                 document.getElementById('weight').value = '';
-                document.getElementById('suburb').value = '';
+                document.getElementById('receiverLocation').value = '';
                 document.getElementById('order-lookup').value = '';  // Xóa luôn order lookup
                 console.log("Dữ liệu trong các ô nhập liệu đã được xóa.");
 
@@ -103,12 +160,44 @@
                     console.log("Checkbox 'I declare no DGs' đã được bỏ chọn.");
                 }
 
-                document.getElementById('message').textContent = "Đã ấn Select"; // Hiển thị thông báo Thành công
+                document.getElementById('message').textContent = "Clicked Select"; // Hiển thị thông báo Thành công
                 document.getElementById('message').style.color = "green"; // Thay đổi màu chữ thông báo
 
-                selectButton.remove(); // Sau khi nhấn Select, xóa nút này khỏi DOM
+                // Xóa bảng và nút Select khỏi DOM
+                document.getElementById('tableContainer').innerHTML = ''; // Xóa bảng
+                selectButton.remove(); // Xóa nút Select
             });
             return selectButton;
+        }
+
+        // Hàm tạo bảng và hiển thị ngẫu nhiên một hàng duy nhất
+        function createTable() {
+            const table = document.createElement('table');
+            table.id = 'dataTableServices';
+            const tbody = document.createElement('tbody');
+
+            // Tạo ngẫu nhiên một hàng duy nhất
+            const services = [
+                { service: 'BBEP', description: 'Border Express Parcel Service' },
+                { service: 'AP3D53', description: 'Australia Post Parcel Post - Safe Drop' }
+            ];
+
+            const randomIndex = Math.floor(Math.random() * services.length);
+            const selectedService = services[randomIndex];
+
+            const row = document.createElement('tr');
+            row.className = 'cursorHand odd row-selected';
+            row.dataset.service = selectedService.service;
+            row.innerHTML = `<td>${selectedService.description}</td>`;
+
+            // Thêm hàng vào tbody
+            tbody.appendChild(row);
+
+            // Thêm tbody vào bảng
+            table.appendChild(tbody);
+
+            // Thêm bảng vào container
+            document.getElementById('tableContainer').appendChild(table);
         }
 
         // Tìm các phần tử chính
@@ -124,19 +213,40 @@
             document.getElementById('width').value = '';
             document.getElementById('height').value = '';
             document.getElementById('weight').value = '';
-            document.getElementById('suburb').value = '';
+            document.getElementById('receiverLocation').value = '';
             noDGsCheckbox.checked = false;
             saveButton.setAttribute('disabled', 'disabled');
             messageDiv.textContent = ''; // Xóa thông báo
             console.log("Đã reset các trường dữ liệu và checkbox.");
         }
 
+        // Hàm kiểm tra các trường và kích hoạt nút Save
+        function checkFields() {
+            const requiredInputs = ['length', 'width', 'height', 'weight', 'receiverLocation'];
+            let allFilled = requiredInputs.every(id => document.getElementById(id).value.trim() !== '');
+            const isNoDGsChecked = noDGsCheckbox.checked;
+
+            if (allFilled && isNoDGsChecked) {
+                saveButton.removeAttribute('disabled');
+            } else {
+                saveButton.setAttribute('disabled', 'disabled');
+            }
+        }
+
+        // Ngăn form bị submit khi nhấn Save
+        document.getElementById('senderReceiverInputForm').addEventListener('submit', function (e) {
+            e.preventDefault(); // Ngăn không cho form submit và reload trang
+        });
+
         // Sự kiện nhập vào ô Order Lookup
         inputField.addEventListener('input', function () {
             const value = inputField.value.trim();
-            suggestionsDiv.innerHTML = ''; // Xóa danh sách cũ
-            resetFields(); // Reset các trường khi có dữ liệu mới được nhập
+            suggestionsDiv.innerHTML = ''; // Xóa danh sách gợi ý cũ
+
             if (value.length > 0) {
+                // Khi có dữ liệu mới nhập vào order-lookup, reset các trường
+                resetFields(); // Reset các trường nhập liệu và checkbox
+
                 setTimeout(() => {
                     // Hiển thị danh sách 5 gợi ý sau 1 giây
                     suggestionsDiv.innerHTML = generateSuggestions(value);
@@ -164,35 +274,25 @@
                 inputField.value = e.target.textContent;
                 suggestionsDiv.innerHTML = ''; // Ẩn gợi ý sau khi chọn
 
-                // Tự động điền dữ liệu vào các trường sau 2 giây
-                setTimeout(() => {
-                    document.getElementById('length').value = Math.floor(Math.random() * 100 + 1);
-                    document.getElementById('width').value = Math.floor(Math.random() * 100 + 1);
-                    document.getElementById('height').value = Math.floor(Math.random() * 100 + 1);
-                    document.getElementById('weight').value = Math.floor(Math.random() * 100 + 1);
-                    document.getElementById('suburb').value = `Suburb ${Math.floor(Math.random() * 100 + 1)}`;
-                    console.log("Tự động điền dữ liệu vào các trường.");
-                    checkFields(); // Kích hoạt nút Save nếu các trường đã được điền
-                },  1500); // 2 giây delay trước khi điền dữ liệu vào các trường
+                if (e.target.classList.contains('ui-state-focus')) {
+                    // Nếu gợi ý đầu tiên được chọn, tự động điền dữ liệu mới vào các trường khác sau 2 giây
+                    setTimeout(() => {
+                        document.getElementById('length').value = Math.floor(Math.random() * 100 + 1); // Giá trị mới
+                        document.getElementById('width').value = Math.floor(Math.random() * 100 + 1); // Giá trị mới
+                        document.getElementById('height').value = Math.floor(Math.random() * 100 + 1); // Giá trị mới
+                        document.getElementById('weight').value = Math.floor(Math.random() * 100 + 1); // Giá trị mới
+                        console.log("Tự động điền giá trị mới vào các trường chiều dài, chiều rộng, chiều cao, và khối lượng.");
+                        checkFields(); // Kích hoạt nút Save nếu các trường đã được điền
+                    }, 1000); // 2 giây delay cho các trường khác
+
+                    // Tự động điền dữ liệu mới cho trường receiverLocation sau 3 giây
+                    setTimeout(() => {
+                        document.getElementById('receiverLocation').value = `Suburb ${Math.floor(Math.random() * 100 + 1)}`; // Giá trị mới
+                        console.log("Tự động điền giá trị mới vào trường Suburb/Town.");
+                        checkFields(); // Kiểm tra lại các trường sau khi điền receiverLocation
+                    }, 1000); // 3 giây delay cho trường receiverLocation
+                }
             }
-        });
-
-        // Hàm kiểm tra các trường và kích hoạt nút Save
-        function checkFields() {
-            const requiredInputs = ['length', 'width', 'height', 'weight', 'suburb'];
-            let allFilled = requiredInputs.every(id => document.getElementById(id).value.trim() !== '');
-            const isNoDGsChecked = noDGsCheckbox.checked;
-
-            if (allFilled && isNoDGsChecked) {
-                saveButton.removeAttribute('disabled');
-            } else {
-                saveButton.setAttribute('disabled', 'disabled');
-            }
-        }
-
-        // Ngăn form bị submit khi nhấn Save
-        document.getElementById('senderReceiverInputForm').addEventListener('submit', function (e) {
-            e.preventDefault(); // Ngăn không cho form submit và reload trang
         });
 
         // Sự kiện nhấn nút Save
@@ -201,15 +301,19 @@
             console.log("Save button clicked!");
 
             // Hiển thị thông báo "Đã ấn Save"
-            messageDiv.textContent = "Đã ấn Save"; // Hiển thị thông báo dưới nút Save
+            messageDiv.textContent = "Clicked Save"; // Hiển thị thông báo dưới nút Save
             messageDiv.style.color = "blue"; // Thay đổi màu chữ thông báo
 
-            // Tạo nút Select sau 1 giây
+            // Tạo bảng và nút Select cùng lúc
             setTimeout(() => {
+                // Tạo và hiển thị bảng với một hàng ngẫu nhiên
+                createTable();
+
+                // Tạo nút Select bên dưới bảng
                 const selectButton = createSelectButton();
-                document.getElementById('senderReceiverInputForm').appendChild(selectButton);
+                document.getElementById('buttonContainer').appendChild(selectButton);
                 console.log("Nút Select đã được thêm vào DOM.");
-            }, 1000); // Thêm 1 giây delay trước khi hiển thị nút Select
+            }, 1000); // Thêm 1 giây delay trước khi hiển thị nút Select và bảng
         });
 
         // Kiểm tra checkbox và các trường mỗi khi giá trị thay đổi
